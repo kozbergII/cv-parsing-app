@@ -3,8 +3,8 @@ from io import BytesIO
 from flask import Flask, request, jsonify, send_file, render_template
 from pymongo.errors import PyMongoError
 
-from parser import extract_cv_data
-from database import *
+from .parser import extract_cv_data
+from .database import *
 
 
 app = Flask(__name__)
