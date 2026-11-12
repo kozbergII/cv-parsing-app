@@ -1,4 +1,3 @@
-
 from io import BytesIO
 
 from flask import Flask, request, jsonify, send_file, render_template
