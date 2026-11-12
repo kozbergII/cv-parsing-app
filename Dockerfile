@@ -21,4 +21,4 @@ USER appuser
 
 EXPOSE 8000
 
-CMD ["python", "-m", "flask", "--app", "app.routes", "run", "--host=0.0.0.0", "--port=8000"]
+CMD ["gunicorn", "app.routes:app"]

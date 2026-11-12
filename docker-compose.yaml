@@ -6,6 +6,7 @@ services:
     environment:
       PORT: ${PORT}
       MONGO_URI: ${MONGO_URI}
+      GUNICORN_CMD_ARGS: "--bind 0.0.0.0:${PORT} --workers 2 --timeout 60"
     depends_on:
       - mongo
     restart: unless-stopped
