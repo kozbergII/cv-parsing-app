@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CV Dashboard</title>
+  <style>
+    body { font: 16px system-ui, sans-serif; max-width: 1100px; margin: 40px auto; padding: 0 20px; color: #182233; }
+    form { padding: 20px; background: #f1f5f9; border-radius: 8px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    button, input { font: inherit; }
+    button { cursor: pointer; padding: 6px 10px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border-bottom: 1px solid #ddd; padding: 10px; text-align: left; }
+    td { overflow-wrap: anywhere; }
+    #message { min-height: 25px; }
+    .table-wrap { overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>Applicants</h1>
+  <form id="upload-form">
+    <input type="file" name="file" accept="application/pdf,.pdf" required>
+    <button type="submit">Upload CV</button>
+  </form>
+  <p id="message" role="status"></p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>ID</th><th>First name</th><th>Family name</th><th>Email</th><th>LinkedIn</th><th>Mobile</th><th>Actions</th>
+      </tr></thead>
+      <tbody id="applicants"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const tbody = document.getElementById("applicants");
+    const message = document.getElementById("message");
+
+    async function loadApplicants() {
+      try {
+        const response = await fetch("/api/applicants");
+        if (!response.ok) throw new Error("Could not load applicants");
+        const applicants = await response.json();
+        tbody.replaceChildren();
+
+        for (const applicant of applicants) {
+          const tr = document.createElement("tr");
+          for (const field of ["personalId", "firstName", "familyName", "email", "linkedinUrl", "mobile"]) {
+            const td = document.createElement("td");
+            if (field === "linkedinUrl" && applicant[field]) {
+              const link = document.createElement("a");
+              link.textContent = applicant[field];
+              const url = applicant[field].startsWith("http") ? applicant[field] : `https://${applicant[field]}`;
+              // Only allow normal LinkedIn profile links.
+              if (/^https:\/\/(www\.)?linkedin\.com\/in\//i.test(url)) {
+                link.href = url;
+                link.target = "_blank";
+                link.rel = "noopener noreferrer";
+                td.append(link);
+              } else {
+                td.textContent = applicant[field];
+              }
+            } else {
+              td.textContent = applicant[field] ?? "—";
+            }
+            tr.append(td);
+          }
+
+          const actions = document.createElement("td");
+          const download = document.createElement("a");
+          download.href = `/api/applicants/${applicant._id}/pdf`;
+          download.textContent = "Download";
+          actions.append(download, " ");
+
+          const remove = document.createElement("button");
+          remove.textContent = "Delete";
+          remove.onclick = async () => {
+            if (!confirm("Delete this applicant and their PDF?")) return;
+            const result = await fetch(`/api/applicants/${applicant._id}`, { method: "DELETE" });
+            message.textContent = result.ok ? "Applicant deleted" : "Delete failed";
+            await loadApplicants();
+          };
+          actions.append(remove);
+          tr.append(actions);
+          tbody.append(tr);
+        }
+      } catch (error) {
+        message.textContent = error.message;
+      }
+    }
+
+    document.getElementById("upload-form").onsubmit = async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      try {
+        const response = await fetch("/api/applicants", { method: "POST", body: new FormData(form) });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Upload failed");
+        message.textContent = "CV uploaded";
+        form.reset();
+        await loadApplicants();
+      } catch (error) {
+        message.textContent = error.message;
+      }
+    };
+
+    loadApplicants();
+  </script>
+</body>
+</html>
