@@ -7,6 +7,7 @@ You can view applicants in the dashboard, download their original CV, and delete
 ## What you need
 
 - Docker
+- Docker Compose
 
 ## First setup
 
